@@ -248,3 +248,132 @@
 </script>
 </body>
 </html>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // DOM Elements
+    const pwScreen = document.getElementById('pw-screen');
+    const congratsScreen = document.getElementById('congrats-screen');
+    const viewerScreen = document.getElementById('viewer');
+    const pwInput = document.querySelector('.pw-input');
+    const submitBtn = document.querySelector('.main-btn');
+    const errorMsg = document.querySelector('.error-msg');
+    const togglePw = document.querySelector('.toggle-pw');
+    const continueBtn = document.querySelector('.congrats-btn button');
+
+    // Authentication
+    const CORRECT_PASSWORD = "FLI";
+    
+    // AUDIO SETUP: Looking for the file you just uploaded
+    const successAudio = new Audio('sound.mp3'); 
+
+    // Toggle password visibility
+    if (togglePw) {
+      togglePw.addEventListener('click', () => {
+        const type = pwInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        pwInput.setAttribute('type', type);
+      });
+    }
+
+    // Handle password submission and transition to Congrats Screen
+    submitBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      
+      if (pwInput.value.toUpperCase() === CORRECT_PASSWORD) {
+        
+        // Play the audio immediately upon success
+        successAudio.play().catch(err => console.log("Audio autoplay prevented by browser:", err));
+
+        // Success Transition
+        pwScreen.classList.add('fade-out');
+        setTimeout(() => {
+          pwScreen.style.display = 'none';
+          congratsScreen.style.display = 'flex';
+          congratsScreen.classList.add('fade-in');
+          fireConfetti();
+        }, 300);
+      } else {
+        // Error State
+        pwInput.classList.add('error');
+        errorMsg.style.display = 'block';
+        
+        // Remove error animation class so it can be re-triggered
+        setTimeout(() => pwInput.classList.remove('error'), 300);
+      }
+    });
+
+    // Handle transition to PDF Viewer Screen
+    continueBtn.addEventListener('click', () => {
+      congratsScreen.classList.remove('fade-in');
+      congratsScreen.classList.add('fade-out');
+      
+      // Stop the audio if it's still playing when they click continue
+      successAudio.pause();
+      successAudio.currentTime = 0;
+
+      setTimeout(() => {
+        congratsScreen.style.display = 'none';
+        viewerScreen.style.display = 'flex';
+        viewerScreen.classList.add('fade-in');
+      }, 300);
+    });
+
+    // Lightweight Confetti Animation
+    function fireConfetti() {
+      const canvas = document.getElementById('confetti-canvas');
+      if (!canvas) return;
+      
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const pieces = [];
+      const colors = ['#6B1A1A', '#A6863C', '#1c1c1c', '#C9A84C'];
+
+      for (let i = 0; i < 120; i++) {
+        pieces.push({
+          x: canvas.width / 2,
+          y: canvas.height / 2,
+          vx: (Math.random() - 0.5) * 25,
+          vy: (Math.random() - 1) * 25 - 5,
+          size: Math.random() * 8 + 4,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          rotation: Math.random() * 360,
+          dr: (Math.random() - 0.5) * 10
+        });
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let active = false;
+        
+        pieces.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.6; // Gravity modifier
+          p.rotation += p.dr;
+          
+          if (p.y < canvas.height) active = true;
+
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rotation * Math.PI / 180);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+          ctx.restore();
+        });
+
+        if (active) requestAnimationFrame(animate);
+      }
+      animate();
+    }
+    
+    // Handle window resize for confetti canvas
+    window.addEventListener('resize', () => {
+      const canvas = document.getElementById('confetti-canvas');
+      if (canvas && congratsScreen.style.display === 'flex') {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+    });
+  });
+</script>
